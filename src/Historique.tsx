@@ -18,8 +18,18 @@ interface IState {
 	sessions: ISession[];
 }
 
-export class Historique extends React.Component<{}, IState> {
-	constructor(props: {}) {
+interface ISavedSession {
+	id?: number;
+	date?: string;
+	title?: string;
+	duration?: string | number;
+	exercises?: number;
+	volume?: string;
+	type?: string;
+}
+
+export class Historique extends React.Component<Record<string, never>, IState> {
+	constructor(props: Record<string, never>) {
 		super(props);
 
 		this.state = {
@@ -29,9 +39,9 @@ export class Historique extends React.Component<{}, IState> {
 	}
 
 	componentDidMount() {
-		const savedRaw = JSON.parse(localStorage.getItem("sessions") || "[]");
+		const savedRaw = JSON.parse(localStorage.getItem("sessions") || "[]") as ISavedSession[];
 
-		const saved: ISession[] = savedRaw.map((session: any) => ({
+		const saved: ISession[] = savedRaw.map((session) => ({
 			id: session.id || Date.now(),
 			date: session.date || new Date().toISOString(),
 			title: session.title || "Renforcement",

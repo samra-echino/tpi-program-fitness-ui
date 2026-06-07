@@ -1,14 +1,12 @@
 import React from "react";
 
-interface IProgressProps {}
-
 interface IProgressState {
 	selectedTab: "training" | "run";
 	selectedPeriod: string;
 }
 
-export class Progress extends React.Component<IProgressProps, IProgressState> {
-	constructor(props: IProgressProps) {
+export class Progress extends React.Component<Record<string, never>, IProgressState> {
+	constructor(props: Record<string, never>) {
 		super(props);
 
 		this.state = {
@@ -170,9 +168,11 @@ export class Progress extends React.Component<IProgressProps, IProgressState> {
 						</p>
 
 						<div className="flex gap-1">
-							{["7j", "30j", "3M", "1A"].map((period) =>
-								this.renderPeriodButton(period)
-							)}
+							{["7j", "30j", "3M", "1A"].map((period) => (
+								<React.Fragment key={period}>
+									{this.renderPeriodButton(period)}
+								</React.Fragment>
+							))}
 						</div>
 					</div>
 

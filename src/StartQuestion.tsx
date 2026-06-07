@@ -139,13 +139,15 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 
 		this.state = {
 			currentQuestionIndex: 0,
-			selectedChoice: "Rester en forme",
-			selectedProgram: "generated",
+			selectedChoice: "",
+			selectedProgram: "",
 			isLoading: false
 		};
 	}
 
 	NextQuestion() {
+		if (!this.state.selectedChoice) return;
+
 		if (this.state.currentQuestionIndex < 8) {
 			this.setState({
 				currentQuestionIndex: this.state.currentQuestionIndex + 1,
@@ -164,6 +166,8 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 	}
 
 	FinishQuestionnaire() {
+		if (!this.state.selectedProgram) return;
+
 		localStorage.setItem("firstConnexionDone", "true");
 		localStorage.setItem("programType", this.state.selectedProgram);
 
@@ -179,7 +183,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 		const step = this.state.currentQuestionIndex + 1;
 
 		return (
-			<div className="grid grid-cols-9 gap-1 mt-8">
+			<div className="grid grid-cols-9 gap-1 mt-5">
 				{Array.from({ length: 9 }).map((_, index) => (
 					<div
 						key={index}
@@ -195,11 +199,11 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 		const step = this.state.currentQuestionIndex + 1;
 
 		return (
-			<header className="px-5 pt-4">
+			<header className="shrink-0 px-5 pt-4">
 				<div className="flex justify-between items-center">
 					<button
 						onClick={() => this.PreviousQuestion()}
-						className="w-10 h-10 rounded-full border border-[#e2dacf] flex items-center justify-center"
+						className="w-10 h-10 rounded-full border border-[#e2dacf] flex items-center justify-center shrink-0"
 					>
 						‹
 					</button>
@@ -224,25 +228,26 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 	renderQuestion() {
 		const question =
 			this.questions[this.state.currentQuestionIndex] || this.questions[0];
+		const canContinue = Boolean(this.state.selectedChoice);
 
 		return (
 			<>
 				{this.renderHeader()}
 
-				<main className="px-5 pt-8">
+				<main className="flex-1 overflow-y-auto px-4 sm:px-5 pt-5 pb-4">
 					<p className="text-xs text-[#8d8378] font-bold tracking-widest">
 						{question.stepTitle}
 					</p>
 
-					<h1 className="font-serif text-[34px] leading-9 font-bold mt-3 text-black">
+					<h1 className="font-serif text-[30px] leading-[34px] font-bold mt-2 text-black">
 						{question.question}
 					</h1>
 
-					<p className="text-[#2d2d2d] text-base mt-4 leading-6">
+					<p className="text-[#2d2d2d] text-[15px] mt-3 leading-6">
 						{question.description}
 					</p>
 
-					<div className="mt-8 space-y-3">
+					<div className="mt-5 space-y-2">
 						{question.choices.map((choice) => {
 							const isSelected = this.state.selectedChoice === choice.title;
 
@@ -250,12 +255,12 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 								<button
 									key={choice.title}
 									onClick={() => this.setState({ selectedChoice: choice.title })}
-									className={`w-full rounded-2xl border p-5 flex justify-between items-center text-left ${isSelected
+									className={`w-full rounded-2xl border px-4 py-3.5 flex justify-between items-center gap-3 text-left ${isSelected
 											? "bg-[#11100d] text-white border-[#11100d]"
 											: "bg-white text-black border-[#ded8cf]"
 										}`}
 								>
-									<div>
+									<div className="min-w-0">
 										<p className="font-bold text-base">{choice.title}</p>
 										<p
 											className={`text-sm mt-1 ${isSelected ? "text-gray-300" : "text-[#8d8378]"
@@ -266,7 +271,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 									</div>
 
 									<div
-										className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? "border-white" : "border-[#d6cec4]"
+										className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-white" : "border-[#d6cec4]"
 											}`}
 									>
 										{isSelected && (
@@ -279,10 +284,15 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 					</div>
 				</main>
 
-				<footer className="absolute bottom-0 left-0 right-0 bg-[#f7f4ee] border-t border-[#ded8cf] px-5 py-6">
+				<footer className="sticky bottom-0 shrink-0 bg-[#f7f4ee] border-t border-[#ded8cf] px-4 sm:px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
 					<button
+						disabled={!canContinue}
 						onClick={() => this.NextQuestion()}
-						className="w-full bg-[#e9653f] text-white rounded-full py-4 font-bold"
+						className={`w-full rounded-full py-4 font-bold transition ${
+							canContinue
+								? "bg-[#e9653f] text-white"
+								: "bg-[#ded8cf] text-[#8d8378] cursor-not-allowed"
+						}`}
 					>
 						Continuer <span className="ml-3">→</span>
 					</button>
@@ -294,14 +304,15 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 	renderProgramChoice() {
 		const isGeneratedSelected = this.state.selectedProgram === "generated";
 		const isCoachSelected = this.state.selectedProgram === "coach";
+		const canCreateProgram = Boolean(this.state.selectedProgram);
 
 		return (
 			<>
-				<header className="px-5 pt-4">
+				<header className="shrink-0 px-5 pt-4">
 					<div className="flex justify-between items-center">
 						<button
 							onClick={() => this.PreviousQuestion()}
-							className="w-10 h-10 rounded-full border border-[#e2dacf] flex items-center justify-center"
+							className="w-10 h-10 rounded-full border border-[#e2dacf] flex items-center justify-center shrink-0"
 						>
 							‹
 						</button>
@@ -314,23 +325,23 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 					{this.renderProgress()}
 				</header>
 
-				<main className="px-5 pt-8">
+				<main className="flex-1 overflow-y-auto px-4 sm:px-5 pt-5 pb-4">
 					<p className="text-xs text-[#8d8378] font-bold tracking-widest">
 						DERNIÈRE ÉTAPE
 					</p>
 
-					<h1 className="font-serif text-[34px] leading-9 font-bold mt-3 text-black">
+					<h1 className="font-serif text-[30px] leading-[34px] font-bold mt-2 text-black">
 						Comment veux-tu être accompagné ?
 					</h1>
 
-					<p className="text-[#2d2d2d] text-base mt-4">
+					<p className="text-[#2d2d2d] text-[15px] mt-3">
 						Tu pourras changer plus tard depuis ton profil.
 					</p>
 
-					<div className="mt-8 space-y-3">
+					<div className="mt-5 space-y-2">
 						<button
 							onClick={() => this.setState({ selectedProgram: "generated" })}
-							className={`w-full rounded-2xl border p-5 text-left ${isGeneratedSelected
+							className={`w-full rounded-2xl border px-4 py-3.5 text-left ${isGeneratedSelected
 									? "bg-[#11100d] text-white border-[#11100d]"
 									: "bg-white text-black border-[#ded8cf]"
 								}`}
@@ -347,7 +358,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 								</div>
 							</div>
 
-							<h2 className="font-serif text-2xl font-bold mt-5">
+							<h2 className="font-serif text-[23px] leading-7 font-bold mt-3">
 								Programme généré
 							</h2>
 
@@ -371,7 +382,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 
 						<button
 							onClick={() => this.setState({ selectedProgram: "coach" })}
-							className={`w-full rounded-2xl border p-5 text-left ${isCoachSelected
+							className={`w-full rounded-2xl border px-4 py-3.5 text-left ${isCoachSelected
 									? "bg-[#11100d] text-white border-[#11100d]"
 									: "bg-white text-black border-[#ded8cf]"
 								}`}
@@ -388,7 +399,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 								</div>
 							</div>
 
-							<h2 className="font-serif text-2xl font-bold mt-5">
+							<h2 className="font-serif text-[23px] leading-7 font-bold mt-3">
 								Coach dédié
 							</h2>
 
@@ -411,10 +422,15 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 					</div>
 				</main>
 
-				<footer className="absolute bottom-0 left-0 right-0 bg-[#f7f4ee] border-t border-[#ded8cf] px-5 py-6">
+				<footer className="sticky bottom-0 shrink-0 bg-[#f7f4ee] border-t border-[#ded8cf] px-4 sm:px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
 					<button
+						disabled={!canCreateProgram}
 						onClick={() => this.FinishQuestionnaire()}
-						className="w-full bg-[#e9653f] text-white rounded-full py-4 font-bold"
+						className={`w-full rounded-full py-4 font-bold transition ${
+							canCreateProgram
+								? "bg-[#e9653f] text-white"
+								: "bg-[#ded8cf] text-[#8d8378] cursor-not-allowed"
+						}`}
 					>
 						Créer mon programme <span className="ml-3">→</span>
 					</button>
@@ -444,7 +460,7 @@ export class StartQuestion extends React.Component<IStartQuestionProps, IStartQu
 			return this.renderLoading();
 		}
 		return (
-			<div className="relative min-h-screen bg-[#f7f4ee] pb-28">
+			<div className="min-h-[100dvh] bg-[#f7f4ee] flex flex-col">
 				{this.state.currentQuestionIndex === 8
 					? this.renderProgramChoice()
 					: this.renderQuestion()}

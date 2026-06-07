@@ -11,8 +11,8 @@ interface IChatState {
 	input: string;
 }
 
-export class ChatCoach extends React.Component<{}, IChatState> {
-	constructor(props: {}) {
+export class ChatCoach extends React.Component<Record<string, never>, IChatState> {
+	constructor(props: Record<string, never>) {
 		super(props);
 
 		this.state = {

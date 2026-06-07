@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
 	getFormattedToday,
+	getPlanningStats,
 	getTodayDayId,
 	getWeekDays,
 	loadWorkouts,
@@ -77,6 +78,13 @@ export class Accueil extends React.Component<Record<string, never>, IAccueilStat
 
 	render() {
 		const todayWorkout = this.getTodayWorkout();
+		const stats = getPlanningStats(this.state.workouts);
+		const totalHours = Math.floor(stats.totalMinutes / 60);
+		const totalMinuteRemainder = stats.totalMinutes % 60;
+		const durationLabel =
+			totalHours > 0
+				? `${totalHours}h${totalMinuteRemainder.toString().padStart(2, "0")}`
+				: `${stats.totalMinutes} min`;
 
 		return (
 			<main className="px-5 pt-14 space-y-4">
@@ -152,10 +160,10 @@ export class Accueil extends React.Component<Record<string, never>, IAccueilStat
 				</section>
 
 				<section className="grid grid-cols-2 gap-3">
-					<Stat title="Séances" value="2/3" small="cette semaine" />
-					<Stat title="Volume" value="18h30" small="↗ +10%" green />
-					<Stat title="Dernière course" value="3,5 km" small="il y a 2 jours" />
-					<Stat title="Calories" value="2 840" small="cette semaine" />
+					<Stat title="Séances" value={`${stats.doneWorkouts}/${stats.totalWorkouts}`} small="réalisées cette semaine" />
+					<Stat title="Durée" value={durationLabel} small="prévue au planning" green />
+					<Stat title="Dernière course" value={stats.lastRunDistance} small={stats.lastRunLabel} />
+					<Stat title="Calories" value={stats.calories.toLocaleString("fr-CH")} small="estimées planning" />
 				</section>
 
 				<section className="bg-white border border-[#e5ddd2] rounded-[20px] p-4 flex items-center justify-between">
@@ -184,15 +192,18 @@ export class Accueil extends React.Component<Record<string, never>, IAccueilStat
 						<p className="text-xs uppercase tracking-widest text-[#9b9186] font-bold">
 							Progression du plan
 						</p>
-						<p className="text-sm font-bold">60%</p>
+						<p className="text-sm font-bold">{stats.progressPercent}%</p>
 					</div>
 
 					<div className="h-2 bg-[#eee7dd] rounded-full mt-4 overflow-hidden">
-						<div className="h-full bg-[#ef623e] rounded-full w-[60%]"></div>
+						<div
+							className="h-full bg-[#ef623e] rounded-full"
+							style={{ width: `${stats.progressPercent}%` }}
+						></div>
 					</div>
 
 					<p className="text-xs text-[#9b9186] mt-2">
-						Semaine 6 sur 10 · objectif perte de poids
+						{stats.doneWorkouts} séance{stats.doneWorkouts > 1 ? "s" : ""} réalisée{stats.doneWorkouts > 1 ? "s" : ""} sur {stats.totalWorkouts}
 					</p>
 				</section>
 			</main>

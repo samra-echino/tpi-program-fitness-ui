@@ -191,6 +191,11 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 	startTimer() {
 		this.stopTimer();
 
+		if (this.state.secs <= 0) {
+			this.skipRest();
+			return;
+		}
+
 		this.timer = window.setInterval(() => {
 			if (this.state.secs <= 1) {
 				this.stopTimer();
@@ -208,12 +213,11 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 		this.stopTimer();
 
 		const exercise = this.getCurrentExercise();
-		const isLastSeries = this.state.setIdx >= exercise.sets;
 
 		this.setState(
 			{
 				phase: "rest",
-				lastSerieIdx: isLastSeries,
+				lastSerieIdx: false,
 				secs: exercise.restSeconds,
 				restTotal: exercise.restSeconds,
 				restRunning: true
@@ -250,12 +254,19 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 		const exercise = this.getCurrentExercise();
 
 		if (this.state.setIdx < exercise.sets) {
+			const nextSetIdx = this.state.setIdx + 1;
+
+			this.stopTimer();
 			this.setState(
 				{
+					phase: "rest",
 					lastSerieIdx: false,
-					setIdx: this.state.setIdx + 1
+					setIdx: nextSetIdx,
+					secs: exercise.restSeconds,
+					restTotal: exercise.restSeconds,
+					restRunning: true
 				},
-				() => this.startRest()
+				() => this.startTimer()
 			);
 			return;
 		}
@@ -310,7 +321,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 							<span className="text-white">
 								{this.state.exerciseIdx + 1} / {STRENGTH_SESSION.length}
 							</span>{" "}
-							â€¢ Série{" "}
+							• Série{" "}
 							<span className="text-white">
 								{this.state.setIdx} / {exercise.sets}
 							</span>
@@ -357,7 +368,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 							: "bg-white text-black border-[#ded8cf]"
 					}`}
 			>
-				{done ? "âœ“" : value}
+				{done ? <i className="fas fa-check text-xs"></i> : value}
 			</button>
 		);
 	}
@@ -559,9 +570,8 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 
 	renderRest() {
 		const exercise = this.getCurrentExercise();
-		const nextExercise = this.getNextExercise();
 		const isPreparingNextExercise = this.state.lastSerieIdx;
-		const previewExercise = isPreparingNextExercise ? nextExercise : exercise;
+		const previewExercise = exercise;
 		const circle = 2 * Math.PI * 62;
 		const percent = this.state.secs / this.state.restTotal;
 		const offset = circle * (1 - percent);
@@ -581,7 +591,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 							Repos
 						</p>
 						<p className="text-sm font-bold">
-							{exercise.title} · serie {this.state.setIdx}/{exercise.sets}
+							{exercise.title} · série {this.state.setIdx}/{exercise.sets}
 						</p>
 					</div>
 
@@ -595,20 +605,20 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 
 				<section className="bg-[#11100d] text-white rounded-3xl p-5 mt-5 text-center">
 					<p className="inline-block bg-white/10 rounded-full px-4 py-2 text-xs font-bold">
-						PAUSE RECUP
+						PAUSE RÉCUP
 					</p>
 
 					<h1 className="font-serif text-2xl font-bold mt-5">
-						Respire, relache les epaules
+						Respire, relâche les épaules
 					</h1>
 
 					{isPreparingNextExercise ? (
 						<p className="text-sm text-gray-300 mt-2">
-							Prepare-toi pour {nextExercise?.title ?? "la fin de seance"}.
+							Prépare-toi pour {exercise.title}.
 						</p>
 					) : (
 						<p className="text-sm text-gray-300 mt-2">
-							Prochaine serie : {this.state.repsMin}-{this.state.repsMax}
+							Prochaine série : {this.state.repsMin}-{this.state.repsMax}
 							{exercise.unit === "sec" ? " sec" : ` reps - ${this.state.weightMax} ${exercise.unit}`}
 						</p>
 					)}
@@ -642,7 +652,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 
 				<section className="bg-white border border-[#ded8cf] rounded-2xl p-4 mt-3">
 					<p className="uppercase text-xs text-[#8d8378] font-bold mb-3">
-						{isPreparingNextExercise ? "Prepare le prochain exercice" : "Prochaine serie"}
+						{isPreparingNextExercise ? "Prépare le prochain exercice" : "Prochaine série"}
 					</p>
 
 					<div className="flex items-center gap-4">
@@ -653,9 +663,9 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 							<p className="text-sm text-[#8d8378]">
 								{previewExercise
 									? isPreparingNextExercise
-										? `${previewExercise.sets} series - ${previewExercise.repsMin}-${previewExercise.repsMax}${previewExercise.unit === "sec" ? " sec" : " reps"}`
-										: `Serie ${this.state.setIdx}/${exercise.sets} - ${this.state.repsMin}-${this.state.repsMax}${exercise.unit === "sec" ? " sec" : " reps"}`
-									: "Dernier exercice de la seance"}
+										? `${previewExercise.sets} séries - ${previewExercise.repsMin}-${previewExercise.repsMax}${previewExercise.unit === "sec" ? " sec" : " reps"}`
+										: `Série ${this.state.setIdx}/${exercise.sets} - ${this.state.repsMin}-${this.state.repsMax}${exercise.unit === "sec" ? " sec" : " reps"}`
+									: "Dernier exercice de la séance"}
 							</p>
 						</div>
 					</div>
@@ -673,4 +683,3 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 		);
 	}
 }
-

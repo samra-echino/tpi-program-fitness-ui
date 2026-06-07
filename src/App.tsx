@@ -16,15 +16,12 @@ import { WatchSync } from "./WatchSync";
 import { RecapSeance } from "./RecapSeance";
 import { RecapCourse } from "./RecapCourse";
 
-interface IAppProps {}
-interface IAppState {}
-
 interface IAppLayoutProps {
 	locationPath: string;
 	navigate: NavigateFunction;
 }
 
-class AppLayout extends React.Component<IAppLayoutProps, IAppState> {
+class AppLayout extends React.Component<IAppLayoutProps, Record<string, never>> {
 	NavItem(to: string, icon: string, label: string, end: boolean = false) {
 		return (
 			<NavLink
@@ -77,9 +74,22 @@ class AppLayout extends React.Component<IAppLayoutProps, IAppState> {
 			localStorage.getItem("firstConnexionDone") === "true";
 
 		const locationPath = this.props.locationPath;
+		const hasBottomNav = ![
+			"/start",
+			"/seance",
+			"/feedback",
+			"/chat",
+			"/watch-sync",
+			"/recap-seance",
+			"/recap-course"
+		].includes(locationPath);
 
 		return (
-			<div className="relative w-full max-w-[390px] min-h-screen bg-[#f7f4ee] border-x border-[#d8d0c5] overflow-y-auto pb-28">
+			<div
+				className={`relative w-full max-w-[430px] min-h-[100dvh] bg-[#f7f4ee] border-x border-[#d8d0c5] overflow-y-auto ${
+					hasBottomNav ? "pb-28" : "pb-0"
+				}`}
+			>
 				<Routes>
 					<Route
 						path="/"
@@ -128,10 +138,10 @@ function AppRouter() {
 	return <AppLayout locationPath={location.pathname} navigate={navigate} />;
 }
 
-export class App extends React.Component<IAppProps, IAppState> {
+export class App extends React.Component<Record<string, never>, Record<string, never>> {
 	render() {
 		return (
-			<div className="min-h-screen bg-[#f3f0ea] flex justify-center">
+			<div className="min-h-[100dvh] bg-[#f3f0ea] flex justify-center">
 				<BrowserRouter>
 					<AppRouter />
 				</BrowserRouter>

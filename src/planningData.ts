@@ -18,6 +18,16 @@ export interface IWorkout {
 	status?: "done" | "today" | "locked";
 }
 
+export interface IPlanningStats {
+	totalWorkouts: number;
+	doneWorkouts: number;
+	totalMinutes: number;
+	calories: number;
+	progressPercent: number;
+	lastRunDistance: string;
+	lastRunLabel: string;
+}
+
 const DAY_IDS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
 const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
@@ -153,7 +163,13 @@ export function loadWorkouts(): IWorkout[] {
 				dayId:
 					typeof savedWorkout?.dayId === "string"
 						? savedWorkout.dayId
-						: fallbackWorkout.dayId
+						: fallbackWorkout.dayId,
+				status:
+					savedWorkout?.status === "done" ||
+					savedWorkout?.status === "today" ||
+					savedWorkout?.status === "locked"
+						? savedWorkout.status
+						: fallbackWorkout.status
 			};
 		});
 	} catch {
@@ -167,4 +183,43 @@ export function saveWorkouts(workouts: IWorkout[]) {
 
 export function getWorkoutRecapPath(workout: IWorkout) {
 	return workout.distance ? "/recap-course" : "/recap-seance";
+}
+
+export function getWorkoutMinutes(workout: IWorkout) {
+	const match = workout.duration.match(/\d+/);
+
+	return match ? Number(match[0]) : 0;
+}
+
+export function getWorkoutCalories(workout: IWorkout) {
+	const minutes = getWorkoutMinutes(workout);
+
+	if (workout.distance) {
+		return minutes * 11;
+	}
+
+	if (workout.title.toLowerCase().includes("yoga")) {
+		return minutes * 4;
+	}
+
+	return minutes * 7;
+}
+
+export function getPlanningStats(workouts: IWorkout[]): IPlanningStats {
+	const totalWorkouts = workouts.length;
+	const doneWorkouts = workouts.filter((workout) => workout.status === "done").length;
+	const totalMinutes = workouts.reduce((total, workout) => total + getWorkoutMinutes(workout), 0);
+	const calories = workouts.reduce((total, workout) => total + getWorkoutCalories(workout), 0);
+	const progressPercent = totalWorkouts > 0 ? Math.round((doneWorkouts / totalWorkouts) * 100) : 0;
+	const lastRun = workouts.find((workout) => workout.distance);
+
+	return {
+		totalWorkouts,
+		doneWorkouts,
+		totalMinutes,
+		calories,
+		progressPercent,
+		lastRunDistance: lastRun?.distance ?? "0 km",
+		lastRunLabel: lastRun ? lastRun.dayId.toUpperCase() : "aucune course"
+	};
 }

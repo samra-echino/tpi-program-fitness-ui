@@ -1,11 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-interface IProfilProps { }
-
-interface IProfilState { }
-
-export class Profil extends React.Component<IProfilProps, IProfilState> {
+export class Profil extends React.Component<Record<string, never>, Record<string, never>> {
 	renderInfoRow(label: string, value: string, isLast?: boolean) {
 		return (
 			<div
@@ -26,9 +22,11 @@ export class Profil extends React.Component<IProfilProps, IProfilState> {
 				</p>
 
 				<div className="bg-white border border-[#ded8cf] rounded-2xl overflow-hidden">
-					{rows.map((row, index) =>
-						this.renderInfoRow(row.label, row.value, index === rows.length - 1)
-					)}
+					{rows.map((row, index) => (
+						<React.Fragment key={row.label}>
+							{this.renderInfoRow(row.label, row.value, index === rows.length - 1)}
+						</React.Fragment>
+					))}
 				</div>
 			</section>
 		);

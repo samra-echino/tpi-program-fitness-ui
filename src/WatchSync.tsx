@@ -13,8 +13,6 @@ interface IDevice {
 	connected: boolean;
 }
 
-interface IWatchSyncProps {}
-
 interface IWatchSyncState {
 	toggles: IDataToggle[];
 	devices: IDevice[];
@@ -22,10 +20,10 @@ interface IWatchSyncState {
 }
 
 export class WatchSync extends React.Component<
-	IWatchSyncProps,
+	Record<string, never>,
 	IWatchSyncState
 > {
-	constructor(props: IWatchSyncProps) {
+	constructor(props: Record<string, never>) {
 		super(props);
 
 		this.state = {
@@ -276,12 +274,14 @@ export class WatchSync extends React.Component<
 					</p>
 
 					<div className="bg-white border border-[#ded8cf] rounded-2xl overflow-hidden">
-						{this.state.toggles.map((toggle, index) =>
-							this.renderToggle(
-								toggle,
-								index === this.state.toggles.length - 1
-							)
-						)}
+						{this.state.toggles.map((toggle, index) => (
+							<React.Fragment key={toggle.id}>
+								{this.renderToggle(
+									toggle,
+									index === this.state.toggles.length - 1
+								)}
+							</React.Fragment>
+						))}
 					</div>
 				</section>
 
@@ -291,12 +291,14 @@ export class WatchSync extends React.Component<
 					</p>
 
 					<div className="bg-white border border-[#ded8cf] rounded-2xl overflow-hidden">
-						{this.state.devices.map((device, index) =>
-							this.renderDevice(
-								device,
-								index === this.state.devices.length - 1
-							)
-						)}
+						{this.state.devices.map((device, index) => (
+							<React.Fragment key={device.id}>
+								{this.renderDevice(
+									device,
+									index === this.state.devices.length - 1
+								)}
+							</React.Fragment>
+						))}
 					</div>
 				</section>
 			</main>

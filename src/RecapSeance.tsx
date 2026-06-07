@@ -142,7 +142,11 @@ export class RecapSeance extends React.Component<IRecapSeanceProps> {
 					<p className="text-sm text-[#8d8378] font-bold">{recapExercises.length}</p>
 				</div>
 
-				{recapExercises.map((exercise) => this.renderExercise(exercise))}
+				{recapExercises.map((exercise) => (
+					<React.Fragment key={exercise.number}>
+						{this.renderExercise(exercise)}
+					</React.Fragment>
+				))}
 			</main>
 		);
 	}
