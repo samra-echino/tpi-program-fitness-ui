@@ -413,13 +413,13 @@ export class Progress extends React.Component<Record<string, never>, IProgressSt
 					<div className="mt-6 h-24 relative">
 						<svg width="100%" height="80" viewBox="0 0 300 80" preserveAspectRatio="none">
 							<path
-								d="M0 58 C40 54, 62 46, 96 44 C134 42, 154 28, 190 32 C230 36, 248 18, 300 20"
+								d="M0 20 C40 24, 62 32, 96 34 C134 36, 154 50, 190 46 C230 42, 248 60, 300 58"
 								fill="none"
 								stroke="#e9653f"
 								strokeWidth="2"
 							/>
 							<path
-								d="M0 58 C40 54, 62 46, 96 44 C134 42, 154 28, 190 32 C230 36, 248 18, 300 20 L300 80 L0 80 Z"
+								d="M0 20 C40 24, 62 32, 96 34 C134 36, 154 50, 190 46 C230 42, 248 60, 300 58 L300 80 L0 80 Z"
 								fill="#e9653f"
 								opacity="0.08"
 							/>
