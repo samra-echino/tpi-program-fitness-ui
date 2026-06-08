@@ -21,11 +21,19 @@ interface IExercise {
 	cues: string[];
 }
 
+interface IPendingSessionChange {
+	id: number;
+	exercise: string;
+	change: string;
+	reason: string;
+}
+
 interface ISeanceState {
 	phase: "exercise" | "rest";
 	exerciseIdx: number;
 	lastSerieIdx: boolean;
 	setIdx: number;
+	elapsedSecs: number;
 	secs: number;
 	restTotal: number;
 	restRunning: boolean;
@@ -33,6 +41,7 @@ interface ISeanceState {
 	repsMax: number;
 	weightMin: number;
 	weightMax: number;
+	pendingChanges: IPendingSessionChange[];
 }
 
 const STRENGTH_SESSION: IExercise[] = [
@@ -48,7 +57,7 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 24,
 		unit: "kg",
 		restSeconds: 90,
-		image: "https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1770664612843-b44e26070024?auto=format&fit=crop&w=900&q=80",
 		cues: ["Pieds largeur épaules", "Genoux dans l'axe des pointes", "Buste grand, descente contrôlée"]
 	},
 	{
@@ -63,7 +72,7 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 20,
 		unit: "kg",
 		restSeconds: 90,
-		image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1692372372344-41aed374b848?auto=format&fit=crop&w=900&q=80",
 		cues: ["Omoplates serrées sur le banc", "Poignets au-dessus des coudes", "Contrôle la descente"]
 	},
 	{
@@ -78,7 +87,7 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 24,
 		unit: "kg",
 		restSeconds: 75,
-		image: "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?auto=format&fit=crop&w=900&q=80",
 		cues: ["Dos long, nuque neutre", "Tire le coude vers la hanche", "Épaule basse, sans rotation"]
 	},
 	{
@@ -93,7 +102,7 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 40,
 		unit: "kg",
 		restSeconds: 90,
-		image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1683279510373-06d83b537ba9?auto=format&fit=crop&w=900&q=80",
 		cues: ["Hanches vers l'arrière", "Barre ou haltères proches des jambes", "Remonte en serrant les fessiers"]
 	},
 	{
@@ -108,7 +117,7 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 14,
 		unit: "kg",
 		restSeconds: 75,
-		image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1704223523449-ca3925f89dcc?auto=format&fit=crop&w=900&q=80",
 		cues: ["Côtes rentrées", "Pousse au-dessus de la tête", "Redescends lentement jusqu'aux épaules"]
 	},
 	{
@@ -123,13 +132,14 @@ const STRENGTH_SESSION: IExercise[] = [
 		weightMax: 0,
 		unit: "sec",
 		restSeconds: 60,
-		image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=900&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1765302741884-e846c7a178df?auto=format&fit=crop&w=900&q=80",
 		cues: ["Coudes sous les épaules", "Bassin légèrement rentré", "Respiration lente, sans cambrer"]
 	}
 ];
 
 export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 	timer?: number;
+	elapsedTimer?: number;
 
 	constructor(props: ISeanceProps) {
 		super(props);
@@ -141,18 +151,28 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 			exerciseIdx: 0,
 			lastSerieIdx: false,
 			setIdx: 1,
+			elapsedSecs: 0,
 			secs: firstExercise.restSeconds,
 			restTotal: firstExercise.restSeconds,
 			restRunning: false,
 			repsMin: firstExercise.repsMin,
 			repsMax: firstExercise.repsMax,
 			weightMin: firstExercise.weightMin,
-			weightMax: firstExercise.weightMax
+			weightMax: firstExercise.weightMax,
+			pendingChanges: []
 		};
 	}
 
 	componentWillUnmount() {
 		this.stopTimer();
+		this.stopElapsedTimer();
+		this.saveSessionSummary();
+	}
+
+	componentDidMount() {
+		localStorage.removeItem("pendingSessionChanges");
+		this.startElapsedTimer();
+		this.saveSessionSummary();
 	}
 
 	getCurrentExercise() {
@@ -171,14 +191,122 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 			exerciseIdx,
 			lastSerieIdx: false,
 			setIdx: 1,
+			elapsedSecs: this.state.elapsedSecs,
 			secs: exercise.restSeconds,
 			restTotal: exercise.restSeconds,
 			restRunning: false,
 			repsMin: exercise.repsMin,
 			repsMax: exercise.repsMax,
 			weightMin: exercise.weightMin,
-			weightMax: exercise.weightMax
+			weightMax: exercise.weightMax,
+			pendingChanges: this.state.pendingChanges
 		});
+	}
+
+	startElapsedTimer() {
+		this.stopElapsedTimer();
+
+		this.elapsedTimer = window.setInterval(() => {
+			this.setState(
+				(state) => ({ elapsedSecs: state.elapsedSecs + 1 }),
+				() => this.saveSessionSummary()
+			);
+		}, 1000);
+	}
+
+	stopElapsedTimer() {
+		if (this.elapsedTimer) {
+			window.clearInterval(this.elapsedTimer);
+			this.elapsedTimer = undefined;
+		}
+	}
+
+	getStartedExerciseCount() {
+		return Math.min(this.state.exerciseIdx + 1, STRENGTH_SESSION.length);
+	}
+
+	getCompletedExerciseCount() {
+		const currentExercise = this.getCurrentExercise();
+		const completedBeforeCurrent = this.state.exerciseIdx;
+		const currentDone =
+			this.state.exerciseIdx === STRENGTH_SESSION.length - 1 &&
+			this.state.setIdx >= currentExercise.sets &&
+			this.state.phase === "exercise";
+
+		return Math.min(
+			completedBeforeCurrent + (currentDone ? 1 : 0),
+			STRENGTH_SESSION.length
+		);
+	}
+
+	saveSessionSummary() {
+		const currentExercise = this.getCurrentExercise();
+		const startedExercises = STRENGTH_SESSION.slice(0, this.getStartedExerciseCount());
+
+		localStorage.setItem(
+			"currentSessionSummary",
+			JSON.stringify({
+				title: "Renforcement",
+				durationSeconds: this.state.elapsedSecs,
+				startedExerciseCount: startedExercises.length,
+				completedExerciseCount: this.getCompletedExerciseCount(),
+				currentExercise: currentExercise.title,
+				exercises: startedExercises.map((exercise) => exercise.title),
+				rpe: "RPE 5",
+				type: "training",
+				updatedAt: new Date().toISOString()
+			})
+		);
+	}
+
+	savePendingChanges(changes: IPendingSessionChange[]) {
+		if (changes.length === 0) {
+			localStorage.removeItem("pendingSessionChanges");
+			return;
+		}
+
+		localStorage.setItem("pendingSessionChanges", JSON.stringify(changes));
+	}
+
+	syncPendingChanges() {
+		const exercise = this.getCurrentExercise();
+		const repsChangeId = exercise.id * 10 + 1;
+		const weightChangeId = exercise.id * 10 + 2;
+		const changes = this.state.pendingChanges.filter(
+			(change) => change.id !== repsChangeId && change.id !== weightChangeId
+		);
+
+		if (
+			this.state.repsMin !== exercise.repsMin ||
+			this.state.repsMax !== exercise.repsMax
+		) {
+			changes.push({
+				id: repsChangeId,
+				exercise: exercise.title,
+				change: `Répétitions : ${exercise.repsMin}-${exercise.repsMax}${exercise.unit === "sec" ? " sec" : " reps"} vers ${this.state.repsMin}-${this.state.repsMax}${exercise.unit === "sec" ? " sec" : " reps"}`,
+				reason: "Modification faite pendant la séance."
+			});
+		}
+
+		if (
+			exercise.unit !== "sec" &&
+			(this.state.weightMin !== exercise.weightMin ||
+				this.state.weightMax !== exercise.weightMax)
+		) {
+			changes.push({
+				id: weightChangeId,
+				exercise: exercise.title,
+				change: `Charge : ${exercise.weightMin}-${exercise.weightMax} ${exercise.unit} vers ${this.state.weightMin}-${this.state.weightMax} ${exercise.unit}`,
+				reason: "Modification faite pendant la séance."
+			});
+		}
+
+		this.setState({ pendingChanges: changes }, () => this.savePendingChanges(changes));
+	}
+
+	goToFeedback() {
+		this.saveSessionSummary();
+		this.props.navigate("/feedback");
 	}
 
 	stopTimer() {
@@ -229,10 +357,13 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 	skipRest() {
 		this.stopTimer();
 
-		this.setState({
-			phase: "exercise",
-			restRunning: false
-		});
+		this.setState(
+			{
+				phase: "exercise",
+				restRunning: false
+			},
+			() => this.saveSessionSummary()
+		);
 	}
 
 	toggleTimer() {
@@ -266,7 +397,10 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 					restTotal: exercise.restSeconds,
 					restRunning: true
 				},
-				() => this.startTimer()
+				() => {
+					this.saveSessionSummary();
+					this.startTimer();
+				}
 			);
 			return;
 		}
@@ -290,12 +424,15 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 					weightMin: nextExercise.weightMin,
 					weightMax: nextExercise.weightMax
 				},
-				() => this.startTimer()
+				() => {
+					this.saveSessionSummary();
+					this.startTimer();
+				}
 			);
 			return;
 		}
 
-		this.props.navigate("/feedback");
+		this.goToFeedback();
 	}
 
 	formatTime(seconds: number) {
@@ -328,7 +465,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 						</p>
 
 						<button
-							onClick={() => this.props.navigate("/feedback")}
+							onClick={() => this.goToFeedback()}
 							className="text-gray-300 font-bold"
 						>
 							Fin
@@ -498,13 +635,19 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 						this.state.repsMax,
 						exercise.unit === "sec" ? "s" : "",
 						(value) =>
-							this.setState({
-								repsMin: Math.max(1, this.state.repsMin + value)
-							}),
+							this.setState(
+								{
+									repsMin: Math.max(1, this.state.repsMin + value)
+								},
+								() => this.syncPendingChanges()
+							),
 						(value) =>
-							this.setState({
-								repsMax: Math.max(this.state.repsMin, this.state.repsMax + value)
-							})
+							this.setState(
+								{
+									repsMax: Math.max(this.state.repsMin, this.state.repsMax + value)
+								},
+								() => this.syncPendingChanges()
+							)
 					)}
 
 					{exercise.unit !== "sec" &&
@@ -514,13 +657,19 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 							this.state.weightMax,
 							exercise.unit,
 							(value) =>
-								this.setState({
-									weightMin: Math.max(0, this.state.weightMin + value)
-								}),
+								this.setState(
+									{
+										weightMin: Math.max(0, this.state.weightMin + value)
+									},
+									() => this.syncPendingChanges()
+								),
 							(value) =>
-								this.setState({
-									weightMax: Math.max(this.state.weightMin, this.state.weightMax + value)
-								})
+								this.setState(
+									{
+										weightMax: Math.max(this.state.weightMin, this.state.weightMax + value)
+									},
+									() => this.syncPendingChanges()
+								)
 						)}
 
 					<section className="border border-[#ded8cf] rounded-2xl px-4 py-3 bg-white">
@@ -596,7 +745,7 @@ export class Seance extends React.Component<ISeanceProps, ISeanceState> {
 					</div>
 
 					<button
-						onClick={() => this.props.navigate("/feedback")}
+						onClick={() => this.goToFeedback()}
 						className="px-4 h-9 bg-white rounded-full text-sm font-bold"
 					>
 						Fin

@@ -1,5 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import type { NavigateFunction } from "react-router-dom";
+
+interface IHistoriqueProps {
+	navigate: NavigateFunction;
+}
 
 interface ISession {
 	id: number;
@@ -28,8 +33,8 @@ interface ISavedSession {
 	type?: string;
 }
 
-export class Historique extends React.Component<Record<string, never>, IState> {
-	constructor(props: Record<string, never>) {
+export class Historique extends React.Component<IHistoriqueProps, IState> {
+	constructor(props: IHistoriqueProps) {
 		super(props);
 
 		this.state = {
@@ -224,15 +229,24 @@ export class Historique extends React.Component<Record<string, never>, IState> {
 
 		return (
 			<main className="min-h-screen bg-[#f7f4ee] px-5 pt-6 pb-28 overflow-hidden">
-				<header className="flex justify-between items-center">
-					<div>
+				<header className="flex justify-between items-center gap-3">
+					<div className="flex items-center gap-3 min-w-0">
+						<button
+							onClick={() => this.props.navigate(-1)}
+							className="w-10 h-10 shrink-0 rounded-full border border-[#ded8cf] bg-white"
+						>
+							‹
+						</button>
+
+						<div className="min-w-0">
 						<p className="uppercase text-xs tracking-widest text-[#8d8378] font-bold">
 							Mes séances
 						</p>
 						<h1 className="font-serif text-4xl font-bold">Historique</h1>
+						</div>
 					</div>
 
-					<button className="w-10 h-10 rounded-full border border-[#ded8cf] bg-white">
+					<button className="w-10 h-10 shrink-0 rounded-full border border-[#ded8cf] bg-white">
 						<i className="fas fa-filter text-sm text-[#8d8378]"></i>
 					</button>
 				</header>

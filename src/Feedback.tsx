@@ -27,31 +27,98 @@ interface IFeedbackState {
 	changes: IExerciseChange[];
 }
 
-const DEFAULT_CHANGES: IExerciseChange[] = [
-	{
-		id: 1,
-		exercise: "Goblet squat",
-		change: "Charge proposée : 18-24 kg vers 20-26 kg",
-		reason: "La série est restée stable, on peut progresser légèrement."
-	},
-	{
-		id: 2,
-		exercise: "Développé haltères",
-		change: "Repos proposé : 90 sec vers 105 sec",
-		reason: "Plus de récupération pour garder une bonne technique."
-	},
-	{
-		id: 3,
-		exercise: "Planche",
-		change: "Durée proposée : 35-45 sec vers 40-50 sec",
-		reason: "Progression douce sur le gainage."
+interface ISessionSummary {
+	title: string;
+	durationSeconds: number;
+	startedExerciseCount: number;
+	completedExerciseCount: number;
+	currentExercise: string;
+	exercises: string[];
+	rpe: string;
+	type: "training" | "run";
+	updatedAt: string;
+}
+
+function loadSessionChanges(): IExerciseChange[] {
+	try {
+		const saved = localStorage.getItem("pendingSessionChanges");
+
+		if (!saved) return [];
+
+		const parsed = JSON.parse(saved);
+
+		if (!Array.isArray(parsed)) return [];
+
+		return parsed.filter(
+			(change): change is IExerciseChange =>
+				typeof change?.id === "number" &&
+				typeof change.exercise === "string" &&
+				typeof change.change === "string" &&
+				typeof change.reason === "string"
+		);
+	} catch {
+		return [];
 	}
-];
+}
 
 function getTodayWorkout() {
 	const todayDayId = getTodayDayId();
 
 	return loadWorkouts().find((workout) => workout.dayId === todayDayId);
+}
+
+function loadCurrentSessionSummary(): ISessionSummary | null {
+	try {
+		const saved = localStorage.getItem("currentSessionSummary");
+
+		if (!saved) return null;
+
+		const parsed = JSON.parse(saved);
+
+		if (
+			typeof parsed?.title !== "string" ||
+			typeof parsed.durationSeconds !== "number" ||
+			typeof parsed.startedExerciseCount !== "number" ||
+			typeof parsed.rpe !== "string" ||
+			!Array.isArray(parsed.exercises)
+		) {
+			return null;
+		}
+
+		return {
+			title: parsed.title,
+			durationSeconds: parsed.durationSeconds,
+			startedExerciseCount: parsed.startedExerciseCount,
+			completedExerciseCount:
+				typeof parsed.completedExerciseCount === "number"
+					? parsed.completedExerciseCount
+					: 0,
+			currentExercise:
+				typeof parsed.currentExercise === "string"
+					? parsed.currentExercise
+					: "",
+			exercises: parsed.exercises.filter((exercise: unknown) => typeof exercise === "string"),
+			rpe: parsed.rpe,
+			type: parsed.type === "run" ? "run" : "training",
+			updatedAt:
+				typeof parsed.updatedAt === "string"
+					? parsed.updatedAt
+					: new Date().toISOString()
+		};
+	} catch {
+		return null;
+	}
+}
+
+function formatDurationFromSeconds(seconds: number) {
+	const minutes = Math.floor(seconds / 60);
+	const remainingSeconds = seconds % 60;
+
+	if (minutes === 0) {
+		return `${remainingSeconds} sec`;
+	}
+
+	return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 function getWorkoutExerciseCount(workout?: IWorkout) {
@@ -72,6 +139,7 @@ function getWorkoutVolume(workout?: IWorkout) {
 
 export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 	workout = getTodayWorkout();
+	sessionSummary = loadCurrentSessionSummary();
 
 	constructor(props: IFeedbackProps) {
 		super(props);
@@ -81,7 +149,7 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 			energy: "",
 			pain: "",
 			note: "",
-			changes: DEFAULT_CHANGES
+			changes: loadSessionChanges()
 		};
 	}
 
@@ -93,11 +161,13 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 
 	acceptChanges() {
 		localStorage.setItem("acceptedSessionChanges", JSON.stringify(this.state.changes));
+		localStorage.removeItem("pendingSessionChanges");
 		this.setState({ changes: [] });
 	}
 
 	saveSession() {
 		const workout = this.workout;
+		const summary = this.sessionSummary;
 		const todayDayId = getTodayDayId();
 		const workouts = loadWorkouts();
 		const updatedWorkouts = workouts.map((item) =>
@@ -107,11 +177,15 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 		);
 		const session = {
 			id: Date.now(),
-			type: workout?.distance ? "run" : "training",
-			title: workout?.title ?? "Séance",
+			type: summary?.type ?? (workout?.distance ? "run" : "training"),
+			title: summary?.title ?? workout?.title ?? "Séance",
 			date: new Date().toISOString(),
-			duration: workout?.duration ?? "0 min",
-			exercises: workout?.exercises ? Number.parseInt(workout.exercises, 10) : undefined,
+			duration: summary
+				? formatDurationFromSeconds(summary.durationSeconds)
+				: workout?.duration ?? "0 min",
+			exercises:
+				summary?.startedExerciseCount ??
+				(workout?.exercises ? Number.parseInt(workout.exercises, 10) : undefined),
 			distance: workout?.distance,
 			volume: getWorkoutVolume(workout),
 			difficulty: this.state.difficulty,
@@ -123,6 +197,7 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 
 		const oldSessions = JSON.parse(localStorage.getItem("sessions") || "[]");
 		localStorage.setItem("sessions", JSON.stringify([session, ...oldSessions]));
+		localStorage.removeItem("currentSessionSummary");
 		saveWorkouts(updatedWorkouts);
 
 		this.props.navigate("/");
@@ -165,6 +240,10 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 	}
 
 	renderChanges() {
+		if (this.state.changes.length === 0) {
+			return null;
+		}
+
 		return (
 			<section className="mt-4 bg-white border border-[#ded8cf] rounded-2xl p-4">
 				<p className="uppercase text-xs text-[#8d8378] font-bold">
@@ -176,40 +255,31 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 				</p>
 
 				<div className="mt-4 space-y-3">
-					{this.state.changes.length === 0 ? (
-						<p className="text-sm text-[#8d8378]">Aucune modification à valider.</p>
-					) : (
-						this.state.changes.map((change) => (
-							<div
-								key={change.id}
-								className="border border-[#ded8cf] rounded-xl p-3 flex gap-3"
-							>
-								<div className="flex-1 min-w-0">
-									<p className="font-bold text-sm">{change.exercise}</p>
-									<p className="text-sm text-black mt-1">{change.change}</p>
-									<p className="text-xs text-[#8d8378] mt-1">{change.reason}</p>
-								</div>
-
-								<button
-									onClick={() => this.removeChange(change.id)}
-									aria-label={`Supprimer la modification ${change.exercise}`}
-									className="w-9 h-9 rounded-full bg-[#f7f4ee] border border-[#ded8cf] text-[#8d8378]"
-								>
-									<i className="far fa-trash-alt"></i>
-								</button>
+					{this.state.changes.map((change) => (
+						<div
+							key={change.id}
+							className="border border-[#ded8cf] rounded-xl p-3 flex gap-3"
+						>
+							<div className="flex-1 min-w-0">
+								<p className="font-bold text-sm">{change.exercise}</p>
+								<p className="text-sm text-black mt-1">{change.change}</p>
+								<p className="text-xs text-[#8d8378] mt-1">{change.reason}</p>
 							</div>
-						))
-					)}
+
+							<button
+								onClick={() => this.removeChange(change.id)}
+								aria-label={`Supprimer la modification ${change.exercise}`}
+								className="w-9 h-9 rounded-full bg-[#f7f4ee] border border-[#ded8cf] text-[#8d8378]"
+							>
+								<i className="far fa-trash-alt"></i>
+							</button>
+						</div>
+					))}
 				</div>
 
 				<button
 					onClick={() => this.acceptChanges()}
-					disabled={this.state.changes.length === 0}
-					className={`w-full rounded-full py-3 font-bold mt-4 ${
-						this.state.changes.length > 0
-							? "bg-black text-white"
-							: "bg-[#ded8cf] text-[#8d8378]"
-					}`}
+					className="w-full rounded-full py-3 font-bold mt-4 bg-black text-white"
 				>
 					Valider les modifications
 				</button>
@@ -219,7 +289,15 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 
 	render() {
 		const workout = this.workout;
+		const summary = this.sessionSummary;
 		const isRun = Boolean(workout?.distance);
+		const durationLabel = summary
+			? formatDurationFromSeconds(summary.durationSeconds)
+			: workout?.duration ?? "0 min";
+		const contentLabel = summary
+			? `${summary.startedExerciseCount} exercice${summary.startedExerciseCount > 1 ? "s" : ""}`
+			: getWorkoutExerciseCount(workout);
+		const rpeLabel = summary?.rpe ?? workout?.rpe ?? "RPE -";
 
 		return (
 			<main className="min-h-screen bg-[#f7f4ee] px-5 pt-6 pb-24">
@@ -232,32 +310,50 @@ export class Feedback extends React.Component<IFeedbackProps, IFeedbackState> {
 
 				<section className="bg-gradient-to-br from-[#11100d] to-[#4a1f0d] text-white rounded-3xl p-5 mt-5">
 					<p className="uppercase text-xs text-[#b8aaa0] font-bold">
-						{workout ? "Séance terminée" : "Retour séance"}
+						{summary ? "Retour séance" : workout ? "Séance terminée" : "Retour séance"}
 					</p>
 
 					<h1 className="font-serif text-3xl font-bold mt-2">
-						{workout?.title ?? "Séance"}
+						{summary?.title ?? workout?.title ?? "Séance"}
 					</h1>
 
-					<div className="grid grid-cols-3 mt-6">
-						<div>
-							<p className="font-serif text-2xl font-bold">
-								{workout?.duration ?? "0 min"}
+					<div className="grid grid-cols-3 gap-5 mt-6">
+						<div className="min-w-0">
+							<p className="font-serif text-2xl font-bold whitespace-nowrap leading-none">
+								{durationLabel}
 							</p>
 							<p className="text-xs text-[#b8aaa0]">durée</p>
 						</div>
-						<div>
-							<p className="font-serif text-2xl font-bold">
-								{getWorkoutExerciseCount(workout)}
+						<div className="min-w-0 text-center">
+							<p className="font-serif text-[1.45rem] font-bold whitespace-nowrap leading-none">
+								{contentLabel}
 							</p>
 							<p className="text-xs text-[#b8aaa0]">{isRun ? "distance" : "contenu"}</p>
 						</div>
-						<div>
-							<p className="font-serif text-2xl font-bold">{workout?.rpe ?? "RPE -"}</p>
+						<div className="min-w-0 text-right">
+							<p className="font-serif text-2xl font-bold whitespace-nowrap leading-none">{rpeLabel}</p>
 							<p className="text-xs text-[#b8aaa0]">intensité</p>
 						</div>
 					</div>
 				</section>
+
+				{summary && summary.exercises.length > 0 && (
+					<section className="mt-4 bg-white border border-[#ded8cf] rounded-2xl p-4">
+						<p className="uppercase text-xs text-[#8d8378] font-bold mb-3">
+							Exercices réalisés
+						</p>
+						<div className="space-y-2">
+							{summary.exercises.map((exercise, index) => (
+								<div key={exercise} className="flex justify-between gap-3 text-sm">
+									<p className="font-bold min-w-0">
+										{index + 1}. {exercise}
+									</p>
+									<p className="text-[#8d8378] shrink-0">{summary.rpe}</p>
+								</div>
+							))}
+						</div>
+					</section>
+				)}
 
 				{this.renderDifficulty()}
 

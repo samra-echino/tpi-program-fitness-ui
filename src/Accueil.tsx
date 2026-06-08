@@ -79,6 +79,9 @@ export class Accueil extends React.Component<Record<string, never>, IAccueilStat
 	render() {
 		const todayWorkout = this.getTodayWorkout();
 		const stats = getPlanningStats(this.state.workouts);
+		const demoCompletedWeeks = 4;
+		const demoTotalWeeks = 6;
+		const demoProgressPercent = Math.round((demoCompletedWeeks / demoTotalWeeks) * 100);
 		const totalHours = Math.floor(stats.totalMinutes / 60);
 		const totalMinuteRemainder = stats.totalMinutes % 60;
 		const durationLabel =
@@ -192,18 +195,18 @@ export class Accueil extends React.Component<Record<string, never>, IAccueilStat
 						<p className="text-xs uppercase tracking-widest text-[#9b9186] font-bold">
 							Progression du plan
 						</p>
-						<p className="text-sm font-bold">{stats.progressPercent}%</p>
+						<p className="text-sm font-bold">{demoCompletedWeeks}/{demoTotalWeeks}</p>
 					</div>
 
 					<div className="h-2 bg-[#eee7dd] rounded-full mt-4 overflow-hidden">
 						<div
 							className="h-full bg-[#ef623e] rounded-full"
-							style={{ width: `${stats.progressPercent}%` }}
+							style={{ width: `${demoProgressPercent}%` }}
 						></div>
 					</div>
 
 					<p className="text-xs text-[#9b9186] mt-2">
-						{stats.doneWorkouts} séance{stats.doneWorkouts > 1 ? "s" : ""} réalisée{stats.doneWorkouts > 1 ? "s" : ""} sur {stats.totalWorkouts}
+						{demoCompletedWeeks} semaine réalisée sur {demoTotalWeeks}
 					</p>
 				</section>
 			</main>

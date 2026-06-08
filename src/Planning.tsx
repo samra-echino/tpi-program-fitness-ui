@@ -73,14 +73,6 @@ export class Planning extends React.Component<IPlanningProps, IPlanningState> {
 	}
 
 	renderAction(workout: IWorkout, isToday: boolean) {
-		if (workout.status === "done") {
-			return (
-				<div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center">
-					<i className="fas fa-check text-sm"></i>
-				</div>
-			);
-		}
-
 		if (isToday) {
 			return (
 				<Link
@@ -89,6 +81,14 @@ export class Planning extends React.Component<IPlanningProps, IPlanningState> {
 				>
 					<i className="fas fa-play text-sm ml-[2px]"></i>
 				</Link>
+			);
+		}
+
+		if (workout.status === "done") {
+			return (
+				<div className="w-9 h-9 rounded-full bg-black text-white flex items-center justify-center">
+					<i className="fas fa-check text-sm"></i>
+				</div>
 			);
 		}
 

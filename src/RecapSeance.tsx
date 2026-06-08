@@ -13,7 +13,7 @@ const recapExercises = [
 		sets: "4 séries",
 		reps: "8-10 reps",
 		weight: "18-24 kg",
-		image: "https://images.unsplash.com/photo-1534367610401-9f5ed68180aa?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1770664612843-b44e26070024?auto=format&fit=crop&w=500&q=80",
 		description: "Garde le buste haut, descends contrôlé, puis remonte en poussant fort dans les talons."
 	},
 	{
@@ -23,7 +23,7 @@ const recapExercises = [
 		sets: "4 séries",
 		reps: "8-10 reps",
 		weight: "14-20 kg",
-		image: "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1692372372344-41aed374b848?auto=format&fit=crop&w=500&q=80",
 		description: "Omoplates serrées sur le banc, descente lente, poussée verticale sans cogner les haltères."
 	},
 	{
@@ -33,7 +33,7 @@ const recapExercises = [
 		sets: "4 séries",
 		reps: "10-12 reps",
 		weight: "16-24 kg",
-		image: "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1605296867424-35fc25c9212a?auto=format&fit=crop&w=500&q=80",
 		description: "Tire le coude vers la hanche, garde l'épaule basse et évite de tourner le buste."
 	},
 	{
@@ -43,7 +43,7 @@ const recapExercises = [
 		sets: "3 séries",
 		reps: "8-10 reps",
 		weight: "30-40 kg",
-		image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1683279510373-06d83b537ba9?auto=format&fit=crop&w=500&q=80",
 		description: "Hanches vers l'arrière, dos long, haltères proches des jambes et remontée par les fessiers."
 	},
 	{
@@ -53,7 +53,7 @@ const recapExercises = [
 		sets: "3 séries",
 		reps: "8-10 reps",
 		weight: "8-14 kg",
-		image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1704223523449-ca3925f89dcc?auto=format&fit=crop&w=500&q=80",
 		description: "Côtes rentrées, pousse au-dessus de la tête, puis reviens lentement aux épaules."
 	},
 	{
@@ -63,7 +63,7 @@ const recapExercises = [
 		sets: "3 séries",
 		reps: "35-45 sec",
 		weight: "Poids du corps",
-		image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=500&auto=format&fit=crop",
+		image: "https://images.unsplash.com/photo-1765302741884-e846c7a178df?auto=format&fit=crop&w=500&q=80",
 		description: "Coudes sous les épaules, bassin légèrement rentré, respiration lente sans cambrer."
 	}
 ];

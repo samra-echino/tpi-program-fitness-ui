@@ -119,7 +119,7 @@ class AppLayout extends React.Component<IAppLayoutProps, Record<string, never>> 
 					<Route path="/progress" element={<Progress />} />
 					<Route path="/profil" element={<Profil />} />
 					<Route path="/chat" element={<ChatCoach />} />
-					<Route path="/historique" element={<Historique />} />
+					<Route path="/historique" element={<Historique navigate={this.props.navigate} />} />
 					<Route path="/watch-sync" element={<WatchSync />} />
 					<Route path="/recap-seance" element={<RecapSeance navigate={this.props.navigate} />} />
 					<Route path="/recap-course" element={<RecapCourse navigate={this.props.navigate} />} />
